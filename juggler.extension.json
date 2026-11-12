@@ -1,0 +1,13 @@
+{
+  "id": "@vorticalbox/ultracode",
+  "name": "Ultracode",
+  "version": "0.1.0",
+  "author": "vorticalbox",
+  "license": "Apache-2.0",
+  "engineApi": "^1.2.0",
+  "permissions": ["filesystem.read", "shell.exec"],
+  "provides": {
+    "strategies": ["strategies/*-strategy-type.js"],
+    "contextItems": ["context-items/*-context-item.js"]
+  }
+}
