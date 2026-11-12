@@ -17,7 +17,7 @@ cannot change it.
 
 | Capability | Id | What it does |
 |---|---|---|
-| Strategy | `ultracode` | Orchestrator brief (plan → parallel Explore/Research → implement → parallel Verify → run tests). Approvals as Default; permission toggles stay visible. |
+| Strategy | `ultracode` | Orchestrator brief (plan → parallel Explore/Research → implement → parallel Verify → run tests). Approvals as YOLO: every tool call is auto-approved (questions and protected deletes still ask). |
 | Sub-agent tool | `Verify` | Read-only adversarial reviewer (read tools + `bash`, no network, no edits). Runs in parallel with other read-only sub-agents. Owns the hidden `ultracode-verify` strategy. |
 
 ## Limits (set by Juggler, not this extension)

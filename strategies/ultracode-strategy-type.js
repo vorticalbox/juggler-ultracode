@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import StrategyType from 'juggler/strategy-type';
+import StrategyType, { APPROVAL_POLICY } from 'juggler/strategy-type';
+import { INTERACTION_KIND } from 'juggler/context-item';
 import { markUntranslated } from 'juggler/i18n';
 
 /**
@@ -8,10 +9,11 @@ import { markUntranslated } from 'juggler/i18n';
  * an orchestrator, fanning investigation out to parallel sub-agents and having
  * every change checked by an independent verifier before calling it done.
  *
- * It is a pure steering strategy. Tools and approvals behave exactly as under
- * Default (writes and shell commands still ask, and the permission toggles stay
- * visible so the user can loosen them). What changes is the brief the model is
- * handed when the mode switches on.
+ * Approvals behave like YOLO: every tool call (writes and shell commands
+ * included) is auto-approved so a long run never stops to ask. Two things still
+ * reach the human, exactly as under YOLO: elicitations (AskUserQuestion — the
+ * answer is the user's own input) and calls the action marks non-auto-approvable
+ * (e.g. a recursive delete of the project root or home).
  *
  * Fan-out is bounded by the host, not by this file: read-only sub-agents
  * (Explore, Research, Verify) run side by side, a delegated thread cannot itself
@@ -28,7 +30,8 @@ export default class UltracodeStrategyType extends StrategyType {
     color: 'var(--accent-blue)',
     icon: 'icon-auto-awesome',
     order: 4,
-    showsApprovalControls: true,
+    // Like YOLO: everything is auto-approved, so the toggles would do nothing.
+    showsApprovalControls: false,
     defaultRules: [],
     recommendations: {
       recommendedFor: [
@@ -45,10 +48,12 @@ export default class UltracodeStrategyType extends StrategyType {
       approach: 'Plans first, fans investigation out to parallel Explore/Research sub-agents, implements in small steps, then has independent Verify sub-agents check the result before reporting.',
       tradeoffs: {
         pros: [
+          'Every tool call is auto-approved like YOLO, so it runs unattended',
           'Broad investigation without filling the main context',
           'Every change is checked by an agent that did not write it'
         ],
         cons: [
+          'No approval checkpoint: writes and shell commands run without asking (as YOLO)',
           'Many more tokens and wall-clock time than Default',
           'Sub-agents only read — edits still happen one at a time in the main thread'
         ]
@@ -71,4 +76,17 @@ export default class UltracodeStrategyType extends StrategyType {
     + '5. Run the project\'s build and tests before you finish. Do not report done while anything is unverified; '
     + 'say plainly what failed, what you skipped, and why.'
   );
+
+  /**
+   * Same policy as YOLO: approve everything except elicitations and calls the
+   * action marks as a deliberate human checkpoint.
+   * @override
+   * @param {{interactionKind?: string, autoApprovable?: boolean}} info
+   * @returns {'approve'|'require-approval'|'default'} Policy decision
+   */
+  getApprovalPolicy({ interactionKind, autoApprovable }) {
+    if (interactionKind === INTERACTION_KIND.ELICITATION) return APPROVAL_POLICY.DEFAULT;
+    if (autoApprovable === false) return APPROVAL_POLICY.DEFAULT;
+    return APPROVAL_POLICY.APPROVE;
+  }
 }
