@@ -17,9 +17,10 @@ const RESULT_SPEC = markUntranslated(
  * `Verify` — an independent, read-only reviewer run as a delegated sub-agent.
  *
  * The caller hands it a claim ("this change makes X correct") plus the files;
- * the child reads and runs checks under VerifySubagentStrategyType and only its
- * verdict comes back. Read-only, so several Verify calls in one turn run side
- * by side — one per angle.
+ * the child reads, runs checks and can make the fixes it is asked for under
+ * VerifySubagentStrategyType, and only its verdict comes back. It can write, so
+ * Verify calls in one turn may conflict on the same files: give parallel calls
+ * different files, or run them one after another.
  *
  * Modelled on core's SubagentContextItem, which extensions cannot import.
  * @augments ContextItem
@@ -28,13 +29,13 @@ export default class VerifyAgentContextItem extends ContextItem {
   static MANIFEST = {
     id: 'ultracode-verify-agent',
     name: 'Verify',
-    version: '0.1.0',
-    description: 'Independently check a change or claim in a read-only sub-agent',
+    version: '0.2.0',
+    description: 'Independently check a change or claim, and make the fixes it is asked for, in a sub-agent',
     author: 'vorticalbox',
     requiresApproval: false,
     delegatesToSubthread: true,
     requiresDelegation: true,
-    readOnlySubthread: true
+    readOnlySubthread: false
   };
 
   /** @returns {{color: string, icon?: string}} Badge options */
@@ -52,10 +53,10 @@ export default class VerifyAgentContextItem extends ContextItem {
       name: 'Verify',
       category: 'read',
       description: markUntranslated(
-        'Have an independent read-only sub-agent check a change or claim against the code, and get back only '
-        + 'its verdict and evidence. It can read files and run inspection commands (tests, type checks, git diff) '
-        + 'but cannot edit or use the network. Use it after a change and before reporting done; call it several '
-        + 'times in one turn for different angles (correctness, edge cases, callers, tests) — they run in parallel. '
+        'Have an independent sub-agent check a change or claim against the code, and make any fixes you ask for, '
+        + 'then get back only its verdict and evidence. It can read files, edit files and run commands (tests, type '
+        + 'checks, git) but cannot use the network. Use it after a change and before reporting done. Calls in one '
+        + 'turn run in parallel, so give parallel calls different files, or run them one after another. '
         + 'Give it the requirement, the files and the change, not your conclusion.\n'
         + 'The task must be self-contained: the sub-agent sees nothing of this conversation.'),
       input_schema: {

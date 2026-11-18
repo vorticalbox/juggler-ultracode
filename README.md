@@ -18,12 +18,12 @@ cannot change it.
 | Capability | Id | What it does |
 |---|---|---|
 | Strategy | `ultracode` | Orchestrator brief (plan → parallel Explore/Research → implement → parallel Verify → run tests). Approvals as YOLO: every tool call is auto-approved (questions and protected deletes still ask). |
-| Sub-agent tool | `Verify` | Read-only adversarial reviewer (read tools + `bash`, no network, no edits). Runs in parallel with other read-only sub-agents. Owns the hidden `ultracode-verify` strategy. |
+| Sub-agent tool | `Verify` | Adversarial reviewer with read tools, edit tools and `bash`, but no network. Can make the fixes it is asked for. Owns the hidden `ultracode-verify` strategy. |
 
 ## Limits (set by Juggler, not this extension)
 
-- Sub-agents only read; the main thread is the only writer, so edits are serial.
-- A delegated thread cannot delegate again (no nested fan-out).
+- Explore and Research only read. Verify can edit, so parallel Verify calls should use different files.
+- A delegated thread cannot delegate again (no nested fan-out), so Verify cannot hand work to other sub-agents itself. The main thread has to do that hand-off.
 - Native Claude Code `Agent`/`Workflow` stay disabled by the `claudecode`
   provider; this uses Juggler's own sub-threads instead, so it works with any
   provider.

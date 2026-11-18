@@ -26,16 +26,17 @@ const VERIFY_GUIDANCE = markUntranslated(
   + 'code yourself; do not trust the description of it.\n'
   + '- Ground every finding in a file and line you actually read, with a concrete input or state that '
   + 'breaks it.\n'
-  + '- You have the read tools and `bash` for inspection and running checks (tests, type checks, '
-  + '`git diff`). You cannot edit anything and have no network.\n'
+  + '- You have the read tools, the edit tools and `bash` for inspection, running checks (tests, type '
+  + 'checks, `git diff`) and making the fixes you were asked for. You have no network.\n'
   + '- Nobody is watching this thread: a call that would need approval is refused automatically, so '
   + 'stay within what needs none and say what you could not run.\n'
-  + '- If you find nothing wrong, say so plainly and list what you checked.'
+  + '- If you find nothing wrong, say so plainly and list what you checked.\n'
+  + '- If you change files, list every path you changed in your final message.'
 );
 
 /**
- * The hidden strategy a Verify run works under: reads plus `bash`, no network,
- * no writes, and nothing left parked.
+ * The hidden strategy a Verify run works under: every tool except the
+ * withheld, delegating and network ones, with nothing left parked.
  *
  * The no-hang invariant: a delegated thread has no human, and APPROVAL_POLICY
  * has no DENY, so every surviving tool is either auto-approved here or refused
@@ -46,8 +47,8 @@ export default class VerifySubagentStrategyType extends StrategyType {
   static MANIFEST = {
     id: 'ultracode-verify',
     name: 'Verify (sub-agent)',
-    version: '0.1.0',
-    description: 'Read-only adversarial review for a delegated Verify run — no network, no edits.',
+    version: '0.2.0',
+    description: 'Adversarial review and fixes for a delegated Verify run — read, edit and bash, no network.',
     author: 'vorticalbox',
     hidden: true,
     showsApprovalControls: false
@@ -58,27 +59,27 @@ export default class VerifySubagentStrategyType extends StrategyType {
   /**
    * @override
    * @param {import('juggler/strategy-type').ToolDefinition[]} tools - All available tools
-   * @returns {import('juggler/strategy-type').ToolDefinition[]} Read/meta tools plus bash
+   * @returns {import('juggler/strategy-type').ToolDefinition[]} Every tool a delegated thread may use
    */
   filterTools(tools) {
     return tools.filter(t =>
       !WITHHELD.includes(t.name)
       && !t.requiresDelegation
-      && !NETWORK_TOOLS.includes(t.name)
-      && (t.name === 'bash' || t.category === 'read' || t.category === 'meta'));
+      && !NETWORK_TOOLS.includes(t.name));
   }
 
   /**
-   * Approve what the permission system already allows; anything it would have
-   * asked a human about parks for the instant onToolPending takes to refuse it.
+   * Approve everything a delegated thread may do. Only elicitations and calls
+   * the action marks as a deliberate human checkpoint are left to the default
+   * path, which onToolPending refuses.
    * @override
    * @param {{toolName: string, defaultApproval: boolean, interactionKind: string, autoApprovable?: boolean}} info - Approval context
    * @returns {'approve'|'require-approval'|'default'} Approval policy
    */
-  getApprovalPolicy({ defaultApproval, interactionKind, autoApprovable }) {
+  getApprovalPolicy({ interactionKind, autoApprovable }) {
     if (interactionKind === INTERACTION_KIND.ELICITATION) return APPROVAL_POLICY.DEFAULT;
     if (autoApprovable === false) return APPROVAL_POLICY.DEFAULT;
-    return defaultApproval ? APPROVAL_POLICY.DEFAULT : APPROVAL_POLICY.APPROVE;
+    return APPROVAL_POLICY.APPROVE;
   }
 
   /**

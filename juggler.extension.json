@@ -1,7 +1,7 @@
 {
   "id": "@vorticalbox/ultracode",
   "name": "Ultracode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "vorticalbox",
   "license": "Apache-2.0",
   "engineApi": "^1.2.0",
