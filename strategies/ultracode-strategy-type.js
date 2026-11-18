@@ -16,8 +16,8 @@ import { markUntranslated } from 'juggler/i18n';
  * (e.g. a recursive delete of the project root or home).
  *
  * Fan-out is bounded by the host, not by this file: read-only sub-agents
- * (Explore, Research, Verify) run side by side, a delegated thread cannot itself
- * delegate, and the model stays the only agent that edits.
+ * (Explore, Research) run side by side, Verify can edit so its calls should not
+ * touch the same files, and a delegated thread cannot itself delegate.
  * @augments StrategyType
  */
 export default class UltracodeStrategyType extends StrategyType {
@@ -55,7 +55,7 @@ export default class UltracodeStrategyType extends StrategyType {
         cons: [
           'No approval checkpoint: writes and shell commands run without asking (as YOLO)',
           'Many more tokens and wall-clock time than Default',
-          'Sub-agents only read — edits still happen one at a time in the main thread'
+          'Verify can edit, so parallel Verify calls on the same files can collide'
         ]
       }
     }
@@ -68,11 +68,12 @@ export default class UltracodeStrategyType extends StrategyType {
     + '2. Fan out. Put independent Explore (code) and Research (web) calls in the SAME turn so they run in '
     + 'parallel — one focused question each, with a self-contained brief naming files and symbols. Keep your '
     + 'own context for decisions; let sub-agents do the bulk reading.\n'
-    + '3. Implement yourself, in small steps. Sub-agents cannot edit; you are the only writer.\n'
+    + '3. Implement in small steps. Explore and Research cannot edit; Verify can. Give parallel Verify calls '
+    + 'different files, or run them one after another, so their edits do not collide.\n'
     + '4. Verify independently. After each meaningful change, call Verify — several in one turn for different '
-    + 'angles (correctness, edge cases, tests/callers). Hand it the files, the change and the requirement, NOT '
-    + 'your conclusion, so it is not anchored on your reading. Treat every issue it reports as real until you '
-    + 'have disproved it.\n'
+    + 'angles (correctness, edge cases, tests/callers) on different files. Hand it the files, the change and the '
+    + 'requirement, NOT your conclusion, so it is not anchored on your reading. Treat every issue it reports as '
+    + 'real until you have disproved it.\n'
     + '5. Run the project\'s build and tests before you finish. Do not report done while anything is unverified; '
     + 'say plainly what failed, what you skipped, and why.'
   );
